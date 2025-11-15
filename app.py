@@ -9,6 +9,44 @@ import gspread
 from google.oauth2.service_account import Credentials
 from openai import OpenAI
 import pandas as pd
+# ================================
+# GOOGLE SHEETS CONNECTION
+# ================================
+
+def connect_gsheets():
+    try:
+        creds = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=["https://www.googleapis.com/auth/spreadsheets"]
+        )
+        client = gspread.authorize(creds)
+        return client
+    except Exception as e:
+        st.error(f"❌ Google Sheets connection failed: {e}")
+        return None
+
+client = connect_gsheets()
+
+if client:
+    try:
+        SH = client.open("Syntax_Pro_DB")
+
+        def load_sheet(sheet_name):
+            ws = SH.worksheet(sheet_name)
+            data = ws.get_all_records()
+            return pd.DataFrame(data)
+
+        # Load main sheets
+        syntax_df        = load_sheet("Syntax_Practice")
+        questions_df     = load_sheet("Questions_Practice")
+        docs_df          = load_sheet("Documentation")
+        users_df         = load_sheet("Users")
+        progress_df      = load_sheet("Progress")
+
+        st.success("✅ Connected to Google Sheets Successfully")
+
+    except Exception as e:
+        st.error(f"❌ Error loading Sheets: {e}")
 
 # =========================
 # APP CONFIG
