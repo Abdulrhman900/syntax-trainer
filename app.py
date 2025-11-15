@@ -1,12 +1,11 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
-import random
-import string
 import os
 from datetime import datetime
 
 # ======================================
-# 0) محاولة استيراد OpenAI (AI Coach)
+# 0) Try to import OpenAI (AI Coach)
 # ======================================
 try:
     from openai import OpenAI
@@ -14,7 +13,7 @@ except ImportError:
     OpenAI = None
 
 # ======================================
-# 1) إعداد الصفحة العامة
+# 1) Page config
 # ======================================
 st.set_page_config(
     page_title="Syntax Trainer Pro",
@@ -22,131 +21,142 @@ st.set_page_config(
     layout="wide",
 )
 
-# --------- Theme Toggle in Session ---------
-if "theme_mode" not in st.session_state:
-    st.session_state["theme_mode"] = "Neon Dark"
-
-theme_mode = st.session_state["theme_mode"]
-
-
 # ======================================
-# 2) CSS حسب الثيم (Neon / Light)
+# 2) Global CSS (White + Mint theme)
 # ======================================
-if theme_mode == "Neon Dark":
-    bg_css = """
-    .main {
-        background: radial-gradient(circle at top, #111827, #020617);
-        color: #e5e7eb;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    """
-else:
-    bg_css = """
-    .main {
-        background: radial-gradient(circle at top, #e5e7eb, #f9fafb);
-        color: #020617;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    """
-
 st.markdown(
-    f"""
+    """
     <style>
-    {bg_css}
-
-    .stButton>button {{
+    .main {
+        background: radial-gradient(circle at top, #ecfeff, #f9fafb);
+        color: #0f172a;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .stButton>button {
         border-radius: 999px;
         padding: 0.45rem 1.3rem;
         font-weight: 600;
         border: 1px solid rgba(148,163,184,0.6);
-        background: linear-gradient(135deg, #22d3ee, #6366f1);
+        background: linear-gradient(135deg, #34d399, #22c55e);
         color: white;
-        box-shadow: 0 0 12px rgba(56,189,248,0.45);
-    }}
-    .stButton>button:hover {{
-        border-color: rgba(248,250,252,0.9);
-        box-shadow: 0 0 22px rgba(129,140,248,0.8);
+        box-shadow: 0 0 14px rgba(52, 211, 153, 0.45);
+    }
+    .stButton>button:hover {
+        border-color: rgba(15,23,42,0.9);
+        box-shadow: 0 0 24px rgba(16, 185, 129, 0.8);
         transform: translateY(-1px);
-    }}
-    .badge {{
+    }
+    .card {
+        border-radius: 22px;
+        padding: 1.2rem 1.4rem;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid rgba(148,163,184,0.25);
+        box-shadow: 0 18px 40px rgba(15,23,42,0.08);
+        backdrop-filter: blur(12px);
+    }
+    .subtitle {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: rgba(148,163,184,0.95);
+        margin-bottom: 0.1rem;
+    }
+    .title-main {
+        font-size: 28px;
+        font-weight: 800;
+        background: linear-gradient(90deg, #0f172a, #22c55e);
+        -webkit-background-clip: text;
+        color: transparent;
+        margin-bottom: 0.4rem;
+    }
+    .small-label {
+        font-size: 12px;
+        color: rgba(100,116,139,0.98);
+    }
+    .pill {
         display: inline-flex;
         align-items: center;
-        padding: 0.18rem 0.6rem;
+        padding: 0.16rem 0.7rem;
         border-radius: 999px;
         font-size: 11px;
         font-weight: 600;
-        background: rgba(56,189,248,0.07);
-        color: #a5f3fc;
-        border: 1px solid rgba(56,189,248,0.7);
+        background: rgba(45,212,191,0.16);
+        color: #0f766e;
+        border: 1px solid rgba(34,197,94,0.55);
         margin-right: 6px;
-    }}
-    .badge-level {{
-        background: rgba(251,191,36,0.08);
-        color: #fed7aa;
-        border-color: rgba(251,191,36,0.7);
-    }}
-    .badge-mode {{
-        background: rgba(94,234,212,0.08);
-        color: #99f6e4;
-        border-color: rgba(94,234,212,0.7);
-    }}
-    .card {{
-        border-radius: 20px;
-        padding: 1.1rem 1.4rem;
-        background: rgba(15,23,42,0.9);
-        border: 1px solid rgba(148,163,184,0.20);
-        backdrop-filter: blur(12px);
-    }}
-    .card-light {{
-        border-radius: 20px;
-        padding: 1.1rem 1.4rem;
-        background: rgba(255,255,255,0.96);
-        border: 1px solid rgba(148,163,184,0.25);
-        backdrop-filter: blur(12px);
-    }}
-    .subtitle {{
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.16em;
-        color: rgba(148,163,184,0.85);
-        margin-bottom: 0.1rem;
-    }}
-    .title-main {{
-        font-size: 26px;
-        font-weight: 800;
-        background: linear-gradient(90deg, #e0f2fe, #a855f7, #f97316);
-        -webkit-background-clip: text;
-        color: transparent;
-        margin-bottom: 0.35rem;
-    }}
-    .small-label {{
-        font-size: 12px;
-        color: rgba(148,163,184,0.9);
-    }}
-    .footer-3d {{
+    }
+    .pill-level {
+        background: rgba(251,191,36,0.18);
+        color: #92400e;
+        border-color: rgba(251,191,36,0.6);
+    }
+    .pill-mode {
+        background: rgba(129,140,248,0.15);
+        color: #312e81;
+        border-color: rgba(129,140,248,0.6);
+    }
+    .footer-3d {
         font-family: "Space Grotesk", system-ui;
         font-weight: 700;
-        font-size: 13px;
-        letter-spacing: 0.12em;
+        font-size: 12px;
+        letter-spacing: 0.2em;
         text-transform: uppercase;
-        color: #a5b4fc;
+        color: #047857;
         text-shadow:
-            0 0 4px rgba(129,140,248,.8),
-            0 0 18px rgba(56,189,248,.6),
-            0 0 28px rgba(236,72,153,.5);
-        transform: translateZ(0);
-    }}
+            0 0 4px rgba(45,212,191,.8),
+            0 0 14px rgba(16,185,129,.7);
+    }
+    .home-card {
+        border-radius: 20px;
+        padding: 1.1rem 1.2rem;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid rgba(209,213,219,0.8);
+        box-shadow: 0 14px 32px rgba(15,23,42,0.06);
+        transition: all 0.16s ease-out;
+        cursor: pointer;
+    }
+    .home-card:hover {
+        box-shadow: 0 18px 40px rgba(16,185,129,0.2);
+        transform: translateY(-2px);
+        border-color: rgba(16,185,129,0.7);
+    }
+    .home-icon {
+        font-size: 28px;
+        margin-bottom: 0.1rem;
+    }
+    .home-title {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 0.1rem;
+        color: #0f172a;
+    }
+    .home-desc {
+        font-size: 12px;
+        color: #6b7280;
+    }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # ======================================
-# 3) إعداد Google Sheets (قراءة فقط الآن)
+# 3) Lottie helper (no extra package)
+# ======================================
+def render_lottie(url: str, height: int = 180):
+    """Embed a Lottie animation by URL using HTML."""
+    lottie_html = f"""
+    <lottie-player src="{url}" background="transparent" speed="1"
+        style="width:100%;height:{height}px;" loop autoplay>
+    </lottie-player>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    """
+    components.html(lottie_html, height=height + 10, scrolling=False)
+
+# ======================================
+# 4) Google Sheets (read-only via CSV)
 # ======================================
 SHEET_ID = "1Gly5KDsBf7jjB-x5fwTK3JLOLgggrtWpPM8bYbLqmRk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
-
 
 @st.cache_data(ttl=300, show_spinner=False)
 def load_sheet(sheet_name: str) -> pd.DataFrame:
@@ -155,7 +165,6 @@ def load_sheet(sheet_name: str) -> pd.DataFrame:
     for c in df.columns:
         df[c] = df[c].astype(str)
     return df
-
 
 syntax_df = pd.DataFrame()
 questions_df = pd.DataFrame()
@@ -181,7 +190,7 @@ except Exception as e:
     sheets_ok = False
 
 # ======================================
-# 4) إعداد OpenAI (AI Coach)
+# 5) OpenAI (AI Coach)
 # ======================================
 OPENAI_API_KEY = None
 client = None
@@ -195,13 +204,10 @@ elif "OPENAI_API_KEY" in os.environ:
 if OPENAI_API_KEY and OpenAI is not None:
     client = OpenAI(api_key=OPENAI_API_KEY)
     ai_enabled = True
-else:
-    ai_enabled = False
-
 
 def ask_ai(prompt: str) -> str:
     if not ai_enabled:
-        return "❌ AI Coach غير مفعّل (تأكد من إعداد OPENAI_API_KEY في secrets.toml)."
+        return "❌ AI Coach is disabled (missing OPENAI_API_KEY in secrets)."
     try:
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -209,29 +215,28 @@ def ask_ai(prompt: str) -> str:
                 {
                     "role": "system",
                     "content": (
-                        "You are an assistant that helps students practice SQL, Pandas, NumPy, and scikit-learn."
-                        "You explain briefly but clearly, mixing Arabic with English keywords."
+                        "You help students practice SQL, Pandas, NumPy, and scikit-learn. "
+                        "Explain briefly but clearly, in English, but you may accept Arabic text in the question. "
+                        "Focus on syntax, logic, and missing/extra parts."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.2,
+            temperature=0.25,
         )
         return resp.choices[0].message.content.strip()
     except Exception as e:
         return f"⚠️ OpenAI Error: {e}"
 
-
 # ======================================
-# 5) Helpers: Normalize, Random Row, Dataset
+# 6) Helpers
 # ======================================
-def normalize_sql(s: str) -> str:
+def normalize_text(s: str) -> str:
     if not isinstance(s, str):
         return ""
     s = s.strip().strip(";")
     s = " ".join(s.split())
     return s.lower()
-
 
 def pick_random_row(df: pd.DataFrame, lang: str = None, level: str = None):
     if df.empty:
@@ -244,7 +249,6 @@ def pick_random_row(df: pd.DataFrame, lang: str = None, level: str = None):
     if tmp.empty:
         return None
     return tmp.sample(1).iloc[0]
-
 
 def generate_dataset(dataset_name: str) -> pd.DataFrame | None:
     dataset_name = (dataset_name or "").strip().lower()
@@ -298,28 +302,27 @@ def generate_dataset(dataset_name: str) -> pd.DataFrame | None:
 
     return None
 
+# ======================================
+# 7) Session state (user, scores, section)
+# ======================================
+if "username" not in st.session_state:
+    st.session_state["username"] = "Guest"
 
-# ======================================
-# 6) Session State for Scores / History
-# ======================================
+if "section" not in st.session_state:
+    st.session_state["section"] = "home"  # home, practice, qlab, docs, leaderboard, settings
+
 if "syntax_score" not in st.session_state:
     st.session_state["syntax_score"] = 0
-
 if "syntax_attempts" not in st.session_state:
     st.session_state["syntax_attempts"] = 0
 
 if "q_score" not in st.session_state:
     st.session_state["q_score"] = 0
-
 if "q_attempts" not in st.session_state:
     st.session_state["q_attempts"] = 0
 
 if "history" not in st.session_state:
-    st.session_state["history"] = []
-
-if "username" not in st.session_state:
-    st.session_state["username"] = "Guest"
-
+    st.session_state["history"] = []  # for leaderboard + dashboard
 
 def log_event(mode: str, language: str, level: str, correct: bool, delta: int):
     st.session_state["history"].append(
@@ -329,37 +332,28 @@ def log_event(mode: str, language: str, level: str, correct: bool, delta: int):
             "mode": mode,
             "language": language,
             "level": level,
-            "correct": correct,
-            "delta": delta,
+            "correct": bool(correct),
+            "delta": int(delta),
         }
     )
 
-
 # ======================================
-# 7) Sidebar: User + Theme + Stats
+# 8) Sidebar (user + language + stats)
 # ======================================
 with st.sidebar:
     st.markdown("### ⚡ Syntax Trainer Pro")
     st.markdown(
-        "<p class='small-label'>Neon training lab for SQL · Pandas · NumPy · sklearn.</p>",
+        "<p class='small-label'>Interactive syntax lab powered by Google Sheets & AI.</p>",
         unsafe_allow_html=True,
     )
 
     st.session_state["username"] = st.text_input(
-        "Your username (for Leaderboard):",
+        "Username (for leaderboard):",
         value=st.session_state["username"],
+        key="username_input",
     )
 
-    theme_mode = st.selectbox(
-        "Theme mode:",
-        ["Neon Dark", "Clean Light"],
-        index=0 if st.session_state["theme_mode"] == "Neon Dark" else 1,
-    )
-    st.session_state["theme_mode"] = theme_mode
-
-    st.markdown("---")
-
-    # استنتاج اللغات المتوفرة من الشيتات
+    # Languages from sheets
     langs = []
     if not syntax_df.empty:
         langs.extend(list(syntax_df["language"].unique()))
@@ -369,20 +363,22 @@ with st.sidebar:
         langs.extend(list(docs_df["language"].unique()))
     if not langs:
         langs = ["SQL", "Pandas", "NumPy", "sklearn"]
-
     langs = sorted(set(langs), key=lambda x: x.lower())
-    preferred_lang = st.selectbox("Preferred language:", options=langs, index=0)
+
+    preferred_lang = st.selectbox(
+        "Preferred language:",
+        options=langs,
+        index=0,
+        key="preferred_lang_select",
+    )
 
     st.markdown("---")
-    st.markdown("<span class='small-label'>Session Progress</span>", unsafe_allow_html=True)
 
-    col_s1, col_s2 = st.columns(2)
-    with col_s1:
-        st.write(f"Syntax ✅ {st.session_state['syntax_score']}/{st.session_state['syntax_attempts']}")
-    with col_s2:
-        st.write(f"Q-Lab ✅ {st.session_state['q_score']}/{st.session_state['q_attempts']}")
+    st.markdown("**Session stats**")
+    st.write(f"- Syntax: {st.session_state['syntax_score']} / {st.session_state['syntax_attempts']}")
+    st.write(f"- Q-Lab: {st.session_state['q_score']} / {st.session_state['q_attempts']}")
 
-    if st.button("Reset session stats"):
+    if st.button("Reset session stats", key="reset_stats_btn"):
         st.session_state["syntax_score"] = 0
         st.session_state["syntax_attempts"] = 0
         st.session_state["q_score"] = 0
@@ -392,124 +388,236 @@ with st.sidebar:
 
     st.markdown("---")
     if ai_enabled:
-        st.success("✅ AI Coach Enabled")
+        st.success("AI Coach: Enabled")
     else:
-        st.warning("⚠️ AI Coach Disabled (missing OPENAI_API_KEY)")
-
+        st.warning("AI Coach: Disabled")
 
 # ======================================
-# 8) Header with Lottie-like Glow (no external JS)
+# 9) Header
 # ======================================
-if theme_mode == "Neon Dark":
-    card_class = "card"
-else:
-    card_class = "card-light"
-
 st.markdown(
-    f"""
-    <div class="{card_class}">
-        <div class='subtitle'>Interactive Neon Lab</div>
-        <div class='title-main'>Syntax Trainer Pro</div>
-        <p style="font-size:13px; color:rgba(148,163,184,0.95); max-width:720px;">
-            درّب نفسك على كتابة الـ syntax بدون حفظ أعمى. جاوب، شوف الـ dataset، 
-            وخلي الـ AI Coach يشرح لك الأخطاء بخليط عربي/إنقليزي. 
-            الLevels جاهزة: Beginner · Intermediate · Advanced.
+    """
+    <div class="card">
+        <div class="subtitle">Training Environment</div>
+        <div class="title-main">Syntax Trainer Pro</div>
+        <p class="small-label" style="margin-top:0.1rem; max-width:720px;">
+            A practice-first environment for SQL, Pandas, NumPy, and scikit-learn. 
+            You type the syntax, the app checks and AI Coach explains. 
+            Questions can be in Arabic, UI is fully English.
         </p>
     </div>
     """,
     unsafe_allow_html=True,
 )
-
 st.write("")
 
 # ======================================
-# 9) Tabs (UI PRO)
+# 10) Home section (cards + lotties)
 # ======================================
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-    ["Syntax Trainer", "Questions Lab", "Docs Hub", "Leaderboard", "Dashboard", "Profile"]
-)
+def render_home():
+    st.markdown("#### Home · Choose your mode")
 
-# --------------------------------------
-# TAB 1: Syntax Trainer
-# --------------------------------------
-with tab1:
-    st.markdown("#### 🧠 Syntax Trainer")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        render_lottie(
+            "https://assets5.lottiefiles.com/packages/lf20_w51pcehl.json",
+            height=180,
+        )
+    with c2:
+        render_lottie(
+            "https://assets2.lottiefiles.com/packages/lf20_gigyrcoy.json",
+            height=180,
+        )
+    with c3:
+        render_lottie(
+            "https://assets7.lottiefiles.com/packages/lf20_4kx2q32n.json",
+            height=180,
+        )
+
+    st.write("")
+    col_a, col_b, col_c = st.columns(3)
+
+    with col_a:
+        st.markdown(
+            """
+            <div class="home-card">
+                <div class="home-icon">⭐</div>
+                <div class="home-title">Start Practice</div>
+                <div class="home-desc">
+                    Practice raw syntax line by line. Focus on muscle memory and accuracy.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Go to Practice", key="go_practice"):
+            st.session_state["section"] = "practice"
+            st.experimental_rerun()
+
+    with col_b:
+        st.markdown(
+            """
+            <div class="home-card">
+                <div class="home-icon">🎯</div>
+                <div class="home-title">Q-Lab</div>
+                <div class="home-desc">
+                    Solve real questions with small datasets, then compare with model answers.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Go to Q-Lab", key="go_qlab"):
+            st.session_state["section"] = "qlab"
+            st.experimental_rerun()
+
+    with col_c:
+        st.markdown(
+            """
+            <div class="home-card">
+                <div class="home-icon">📘</div>
+                <div class="home-title">Docs Hub</div>
+                <div class="home-desc">
+                    Browse hand-picked documentation, syntax patterns, and usage examples.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Go to Docs", key="go_docs"):
+            st.session_state["section"] = "docs"
+            st.experimental_rerun()
+
+    st.write("")
+    col_d, col_e = st.columns(2)
+    with col_d:
+        st.markdown(
+            """
+            <div class="home-card">
+                <div class="home-icon">🏆</div>
+                <div class="home-title">Leaderboard</div>
+                <div class="home-desc">
+                    See your session performance and compare across modes and levels.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("View Leaderboard", key="go_leaderboard"):
+            st.session_state["section"] = "leaderboard"
+            st.experimental_rerun()
+
+    with col_e:
+        st.markdown(
+            """
+            <div class="home-card">
+                <div class="home-icon">⚙️</div>
+                <div class="home-title">Settings</div>
+                <div class="home-desc">
+                    Reset progress, review AI status, and manage your preferred language.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Open Settings", key="go_settings"):
+            st.session_state["section"] = "settings"
+            st.experimental_rerun()
+
+# ======================================
+# 11) Practice section (Syntax_Practice)
+# ======================================
+def render_practice():
+    st.markdown("#### ⭐ Syntax Practice")
 
     if syntax_df.empty:
-        st.warning("جدول Syntax_Practice فارغ أو غير متوفر.")
-    else:
-        col1, col2, col3 = st.columns([1, 1, 1])
+        st.warning("Syntax_Practice sheet is empty or not available.")
+        return
 
-        with col1:
-            level_options = sorted(syntax_df["level"].unique())
-            level = st.selectbox("Level", options=level_options, index=0)
+    col1, col2, col3 = st.columns([1.2, 1.2, 0.8])
 
-        with col2:
-            categories = sorted(syntax_df["category"].unique())
-            category = st.selectbox("Category", options=["All"] + categories)
+    with col1:
+        level_options = sorted(syntax_df["level"].unique())
+        level = st.selectbox(
+            "Level",
+            options=level_options,
+            index=0,
+            key="practice_level_select",
+        )
+    with col2:
+        categories = sorted(syntax_df["category"].unique())
+        category = st.selectbox(
+            "Category",
+            options=["All"] + categories,
+            index=0,
+            key="practice_category_select",
+        )
+    with col3:
+        st.write("")
 
-        with col3:
-            st.write("")
+    filtered = syntax_df.copy()
+    filtered = filtered[filtered["language"].str.lower() == preferred_lang.lower()]
+    filtered = filtered[filtered["level"] == level]
+    if category != "All":
+        filtered = filtered[filtered["category"] == category]
 
-        filtered = syntax_df.copy()
-        filtered = filtered[filtered["language"].str.lower() == preferred_lang.lower()]
-        if category != "All":
-            filtered = filtered[filtered["category"] == category]
+    row = pick_random_row(filtered)
+    if row is None:
+        st.warning("No matching syntax items for current filters.")
+        return
 
-        row = pick_random_row(filtered)
-        if row is None:
-            st.warning("ما فيه سجلات مطابقة للفلترة.")
+    st.markdown(
+        f"""
+        <div class="card">
+            <div>
+                <span class="pill">{row['language']}</span>
+                <span class="pill pill-level">{row['level']}</span>
+                <span class="pill pill-mode">{row['category']}</span>
+            </div>
+            <h4 style="margin-top:0.45rem;margin-bottom:0.25rem;">Task</h4>
+            <p style="font-size:14px; color:#111827; margin-bottom:0.18rem;">
+                {row.get('description_en','').strip()}
+            </p>
+            <p style="font-size:13px; color:#6b7280; direction:rtl; text-align:right;">
+                {row.get('description_ar','').strip()}
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.write("")
+    user_answer = st.text_area(
+        "Type the exact syntax:",
+        height=90,
+        key="practice_answer_textarea",
+    )
+
+    colb1, colb2, colb3 = st.columns([0.45, 0.3, 0.25])
+    with colb1:
+        check_btn = st.button("Check", key="practice_check_btn")
+    with colb2:
+        new_btn = st.button("New item", key="practice_new_btn")
+    with colb3:
+        show_btn = st.button("Show model answer", key="practice_show_btn")
+
+    expected = row.get("syntax", "")
+
+    if check_btn:
+        st.session_state["syntax_attempts"] += 1
+
+        if normalize_text(user_answer) == normalize_text(expected):
+            st.success("Correct syntax. Nice work! ✅")
+            st.session_state["syntax_score"] += 1
+            log_event("Syntax", row["language"], row["level"], True, +1)
         else:
-            st.markdown(
-                f"""
-                <div class="{card_class}">
-                    <div>
-                        <span class='badge'>{row['language']}</span>
-                        <span class='badge badge-level'>{row['level']}</span>
-                        <span class='badge badge-mode'>{row['category']}</span>
-                    </div>
-                    <h4 style="margin-top:0.5rem; margin-bottom:0.3rem;">Task 🎯</h4>
-                    <p style="font-size:14px; color:rgba(226,232,240,0.94); margin-bottom:0.2rem;">
-                        {row.get('description_en','').strip()}
-                    </p>
-                    <p style="font-size:13px; color:rgba(148,163,184,0.95); direction:rtl; text-align:right;">
-                        {row.get('description_ar','').strip()}
-                    </p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.error("Not an exact match. Check spaces, keywords, and order.")
+            log_event("Syntax", row["language"], row["level"], False, 0)
 
-            st.write("")
-            user_answer = st.text_area(
-                "✍️ اكتب الـ syntax بالضبط:",
-                height=90,
-                key="syntax_answer_input_tab1",
-            )
-
-            colb1, colb2, colb3 = st.columns([0.5, 0.25, 0.25])
-            with colb1:
-                check_clicked = st.button("Check", type="primary", key="syntax_check_btn")
-            with colb2:
-                new_q = st.button("🔁 New", key="syntax_new_btn")
-            with colb3:
-                show_solution = st.button("👀 Show model answer", key="syntax_show_ans_btn")
-
-            if check_clicked:
-                st.session_state["syntax_attempts"] += 1
-                expected = row.get("syntax", "")
-                if normalize_sql(user_answer) == normalize_sql(expected):
-                    st.success("✅ Perfect syntax! 👑")
-                    st.session_state["syntax_score"] += 1
-                    log_event("Syntax", row["language"], row["level"], True, +1)
-                else:
-                    st.error("❌ الإجابة غير مطابقة بالكامل.")
-                    log_event("Syntax", row["language"], row["level"], False, 0)
-
-                if ai_enabled:
-                    with st.expander("🔎 AI Coach Feedback"):
-                        prompt = f"""
-You are helping a student practice {row['language']} syntax.
+        if ai_enabled:
+            with st.expander("AI Coach feedback"):
+                prompt = f"""
+Student is practicing {row['language']} syntax.
 
 Task:
 {row.get('description_en','')}
@@ -520,120 +628,125 @@ Correct syntax:
 Student answer:
 {user_answer}
 
-1) Say if the answer is correct / partially correct / wrong.
-2) Highlight missing or extra parts.
-3) Provide a short explanation in Arabic mixed with SQL keywords.
-4) Provide one extra correct example.
+1) Is the answer correct / partially correct / wrong?
+2) Point out differences.
+3) Give a short explanation and one extra example.
 """
-                        st.markdown(ask_ai(prompt))
+                st.markdown(ask_ai(prompt))
 
-            if show_solution:
-                expected = row.get("syntax", "")
-                st.info("الإجابة النموذجية:")
-                st.code(expected, language="sql")
+    if show_btn:
+        st.info("Model answer:")
+        st.code(expected, language="sql")
 
-                if row.get("usage_example", "").strip():
-                    with st.expander("Usage example / مثال استخدام"):
-                        st.code(row["usage_example"], language="sql")
+        usage = row.get("usage_example", "").strip()
+        if usage:
+            with st.expander("Usage example"):
+                st.code(usage, language="sql")
 
-            # Progress bar
-            if st.session_state["syntax_attempts"] > 0:
-                acc = st.session_state["syntax_score"] / max(st.session_state["syntax_attempts"], 1)
-                st.write("")
-                st.markdown("**Progress:**")
-                st.progress(acc)
+    if st.session_state["syntax_attempts"] > 0:
+        acc = st.session_state["syntax_score"] / max(st.session_state["syntax_attempts"], 1)
+        st.write("")
+        st.markdown("**Session progress:**")
+        st.progress(acc)
 
+    if new_btn:
+        st.experimental_rerun()
 
-            if new_q:
-                st.experimental_rerun()
-
-# --------------------------------------
-# TAB 2: Questions Lab
-# --------------------------------------
-with tab2:
-    st.markdown("#### 🧪 Questions Lab (SQL / others)")
+# ======================================
+# 12) Q-Lab section (Questions_Practice)
+# ======================================
+def render_qlab():
+    st.markdown("#### 🎯 Q-Lab (Questions Practice)")
 
     if questions_df.empty:
-        st.warning("جدول Questions_Practice فارغ أو غير متوفر.")
+        st.warning("Questions_Practice sheet is empty or not available.")
+        return
+
+    col1, col2 = st.columns([1.2, 1.2])
+    with col1:
+        level_options = sorted(questions_df["level"].unique())
+        q_level = st.selectbox(
+            "Level",
+            options=level_options,
+            index=0,
+            key="qlab_level_select",
+        )
+    with col2:
+        st.write("")
+
+    filtered = questions_df.copy()
+    filtered = filtered[filtered["language"].str.lower() == preferred_lang.lower()]
+    filtered = filtered[filtered["level"] == q_level]
+
+    row = pick_random_row(filtered)
+    if row is None:
+        st.warning("No matching questions for current filters.")
+        return
+
+    st.markdown(
+        f"""
+        <div class="card">
+            <div>
+                <span class="pill">{row['language']}</span>
+                <span class="pill pill-level">{row['level']}</span>
+            </div>
+            <h4 style="margin-top:0.45rem;margin-bottom:0.25rem;">Question</h4>
+            <p style="font-size:15px; color:#111827;">
+                {row.get('question','').strip()}
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    dataset_name = row.get("dataset_name", "").strip()
+    df_data = None
+    if dataset_name:
+        df_data = generate_dataset(dataset_name)
+
+    if df_data is not None:
+        with st.expander(f"Dataset preview: {dataset_name}"):
+            st.dataframe(df_data, use_container_width=True)
     else:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            level_options = sorted(questions_df["level"].unique())
-            q_level = st.selectbox("Level", options=level_options, index=0)
-        with col2:
-            st.write("")
+        preview = row.get("dataset_preview", "").strip()
+        if preview:
+            with st.expander("Dataset description"):
+                st.markdown(preview)
 
-        filtered_q = questions_df.copy()
-        filtered_q = filtered_q[filtered_q["language"].str.lower() == preferred_lang.lower()]
-        filtered_q = filtered_q[filtered_q["level"] == q_level]
+    user_answer_q = st.text_area(
+        "Your answer (SQL or code):",
+        height=110,
+        key="qlab_answer_textarea",
+    )
 
-        row_q = pick_random_row(filtered_q)
-        if row_q is None:
-            st.warning("ما فيه أسئلة مطابقة للفلترة.")
+    colq1, colq2, colq3 = st.columns([0.45, 0.3, 0.25])
+    with colq1:
+        check_q = st.button("Check answer", key="qlab_check_btn")
+    with colq2:
+        new_q = st.button("New question", key="qlab_new_btn")
+    with colq3:
+        show_q = st.button("Show model", key="qlab_show_btn")
+
+    correct = row.get("correct_answer", "")
+
+    if check_q:
+        st.session_state["q_attempts"] += 1
+
+        if normalize_text(user_answer_q) == normalize_text(correct):
+            st.success("Correct answer. Great job! ✅")
+            st.session_state["q_score"] += 1
+            log_event("Questions", row["language"], row["level"], True, +2)
         else:
-            st.markdown(
-                f"""
-                <div class="{card_class}">
-                    <div>
-                        <span class='badge'>{row_q['language']}</span>
-                        <span class='badge badge-level'>{row_q['level']}</span>
-                    </div>
-                    <h4 style="margin-top:0.45rem; margin-bottom:0.3rem;">Question 🎯</h4>
-                    <p style="font-size:15px; color:rgba(226,232,240,0.98);">
-                        {row_q.get('question','').strip()}
-                    </p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.error("Not correct or incomplete. Compare with the model answer.")
+            log_event("Questions", row["language"], row["level"], False, 0)
 
-            # Dataset display
-            dataset_name = row_q.get("dataset_name", "").strip()
-            df_data = None
-            if dataset_name:
-                df_data = generate_dataset(dataset_name)
-            if df_data is not None:
-                with st.expander(f"📊 Dataset: {dataset_name}"):
-                    st.dataframe(df_data, use_container_width=True)
-            else:
-                preview = row_q.get("dataset_preview", "").strip()
-                if preview:
-                    with st.expander("📊 Dataset preview (نصي)"):
-                        st.markdown(preview)
-
-            user_answer_q = st.text_area(
-                "✍️ اكتب الحل (SQL أو حسب اللغة):",
-                height=110,
-                key="q_answer_input",
-            )
-
-            colq1, colq2, colq3 = st.columns([0.5, 0.25, 0.25])
-            with colq1:
-                check_q = st.button("Check answer", type="primary", key="q_check_btn")
-            with colq2:
-                newq2 = st.button("🔁 New question", key="q_new_btn")
-            with colq3:
-                show_q_model = st.button("👀 Show model", key="q_show_model_btn")
-
-            correct = row_q.get("correct_answer", "")
-
-            if check_q:
-                st.session_state["q_attempts"] += 1
-                if normalize_sql(user_answer_q) == normalize_sql(correct):
-                    st.success("✅ إجابة صحيحة! ممتاز.")
-                    st.session_state["q_score"] += 1
-                    log_event("Questions", row_q["language"], row_q["level"], True, +2)
-                else:
-                    st.error("❌ الإجابة غير صحيحة أو ناقصة.")
-                    log_event("Questions", row_q["language"], row_q["level"], False, 0)
-
-                if ai_enabled:
-                    with st.expander("🔎 AI Coach – تحليل الإجابة"):
-                        prompt = f"""
+        if ai_enabled:
+            with st.expander("AI Coach analysis"):
+                prompt = f"""
 You are an instructor.
 
 Question:
-{row_q.get('question','')}
+{row.get('question','')}
 
 Correct answer:
 {correct}
@@ -642,195 +755,187 @@ Student answer:
 {user_answer_q}
 
 1) Is the answer correct / partially correct / wrong?
-2) Explain the differences (filters, joins, grouping, etc.).
-3) Suggest a correct version.
-4) Explain in Arabic (with English SQL keywords).
+2) Explain the key differences.
+3) Provide a corrected version.
 """
-                        st.markdown(ask_ai(prompt))
+                st.markdown(ask_ai(prompt))
 
-            if show_q_model:
-                st.info("الإجابة النموذجية:")
-                st.code(correct, language="sql")
+    if show_q:
+        st.info("Model answer:")
+        st.code(correct, language="sql")
 
-            if st.session_state["q_attempts"] > 0:
-                acc2 = st.session_state["q_score"] / max(st.session_state["q_attempts"], 1)
-                st.write("")
-                st.markdown("**Progress:**")
-                st.progress(acc2)
+    if st.session_state["q_attempts"] > 0:
+        acc2 = st.session_state["q_score"] / max(st.session_state["q_attempts"], 1)
+        st.write("")
+        st.markdown("**Session progress:**")
+        st.progress(acc2)
 
-            if newq2:
-                st.experimental_rerun()
+    if new_q:
+        st.experimental_rerun()
 
-# --------------------------------------
-# TAB 3: Docs Hub
-# --------------------------------------
-with tab3:
-    st.markdown("#### 📚 Docs Hub")
+# ======================================
+# 13) Documentation section
+# ======================================
+def render_docs():
+    st.markdown("#### 📘 Docs Hub")
 
     if docs_df.empty:
-        st.warning("جدول Documentation فارغ أو غير متوفر.")
-    else:
-        docs_lang = docs_df[docs_df["language"].str.lower() == preferred_lang.lower()]
-        if docs_lang.empty:
-            st.warning("ما فيه توثيق للغة المختارة.")
-        else:
-            categories = sorted(docs_lang["category"].unique())
-            col1, col2 = st.columns([1, 2])
-            with col1:
-                cat = st.selectbox("Category", options=["All"] + categories)
-            with col2:
-                q = st.text_input("Search (title / description / syntax):", "")
+        st.warning("Documentation sheet is empty or not available.")
+        return
 
-            docs_filtered = docs_lang.copy()
-            if cat != "All":
-                docs_filtered = docs_filtered[docs_filtered["category"] == cat]
+    docs_lang = docs_df[docs_df["language"].str.lower() == preferred_lang.lower()]
+    if docs_lang.empty:
+        st.warning("No documentation for current language yet.")
+        return
 
-            if q.strip():
-                s = q.lower()
-                docs_filtered = docs_filtered[
-                    docs_filtered["title"].str.lower().str.contains(s)
-                    | docs_filtered["description_en"].str.lower().str.contains(s)
-                    | docs_filtered["syntax"].str.lower().str.contains(s)
-                ]
+    categories = sorted(docs_lang["category"].unique())
+    col1, col2 = st.columns([1.2, 1.8])
+    with col1:
+        cat = st.selectbox(
+            "Category",
+            options=["All"] + categories,
+            index=0,
+            key="docs_category_select",
+        )
+    with col2:
+        search = st.text_input(
+            "Search (title / description / syntax):",
+            "",
+            key="docs_search_input",
+        )
 
-            if docs_filtered.empty:
-                st.info("ما فيه نتائج مطابقة.")
-            else:
-                for _, r in docs_filtered.iterrows():
-                    with st.expander(f"📦 {r.get('title','(no title)')}"):
-                        st.markdown(
-                            f"**Category:** `{r.get('category','')}` &nbsp; | "
-                            f"**Language:** `{r.get('language','')}`"
-                        )
-                        if r.get("description_en", "").strip():
-                            st.markdown("**Description (EN):**")
-                            st.markdown(r["description_en"].strip())
-                        if r.get("description_ar", "").strip():
-                            st.markdown("**الوصف (AR):**")
-                            st.markdown(r["description_ar"].strip())
+    docs_filtered = docs_lang.copy()
+    if cat != "All":
+        docs_filtered = docs_filtered[docs_filtered["category"] == cat]
 
-                        if r.get("syntax", "").strip():
-                            st.markdown("**Syntax:**")
-                            st.code(r["syntax"].strip(), language="sql")
-                        if r.get("examples", "").strip():
-                            st.markdown("**Examples:**")
-                            st.code(r["examples"].strip(), language="sql")
-                        if r.get("notes", "").strip():
-                            st.markdown("**Notes:**")
-                            st.markdown(r["notes"].strip())
+    if search.strip():
+        s = search.lower()
+        docs_filtered = docs_filtered[
+            docs_filtered["title"].str.lower().str.contains(s)
+            | docs_filtered["description_en"].str.lower().str.contains(s)
+            | docs_filtered["syntax"].str.lower().str.contains(s)
+        ]
 
-# --------------------------------------
-# TAB 4: Leaderboard (جلسة فقط حالياً)
-# --------------------------------------
-with tab4:
-    st.markdown("#### 🏆 Leaderboard (Session-based)")
+    if docs_filtered.empty:
+        st.info("No documentation matches the current filters.")
+        return
 
-    if not st.session_state["history"]:
-        st.info("ما فيه بيانات بعد. جرّب تحل أسئلة أول.")
-    else:
-        hist_df = pd.DataFrame(st.session_state["history"])
-        # تجميع حسب المستخدم
-        agg = (
-            hist_df.groupby("user")
-            .agg(
-                total_events=("mode", "count"),
-                correct=("correct", "sum"),
-                score=("delta", "sum"),
+    for _, r in docs_filtered.iterrows():
+        with st.expander(f"📦 {r.get('title','(no title)')}"):
+            st.markdown(
+                f"**Category:** `{r.get('category','')}` · **Language:** `{r.get('language','')}`"
             )
-            .reset_index()
-        )
+            if r.get("description_en", "").strip():
+                st.markdown("**Description (EN):**")
+                st.markdown(r["description_en"].strip())
+            if r.get("description_ar", "").strip():
+                st.markdown("**Description (AR):**")
+                st.markdown(r["description_ar"].strip())
+            if r.get("syntax", "").strip():
+                st.markdown("**Syntax:**")
+                st.code(r["syntax"].strip(), language="sql")
+            if r.get("examples", "").strip():
+                st.markdown("**Examples:**")
+                st.code(r["examples"].strip(), language="sql")
+            if r.get("notes", "").strip():
+                st.markdown("**Notes:**")
+                st.markdown(r["notes"].strip())
 
-        agg["accuracy"] = (agg["correct"] / agg["total_events"]).round(2)
-
-        st.markdown("**Ranking (local session only):**")
-        st.dataframe(
-            agg.sort_values(["score", "accuracy"], ascending=[False, False]),
-            use_container_width=True,
-        )
-
-        st.markdown("**Raw history:**")
-        st.dataframe(hist_df, use_container_width=True)
-
-# --------------------------------------
-# TAB 5: Dashboard
-# --------------------------------------
-with tab5:
-    st.markdown("#### 📊 Dashboard (Session Analytics)")
+# ======================================
+# 14) Leaderboard section (session-based)
+# ======================================
+def render_leaderboard():
+    st.markdown("#### 🏆 Leaderboard (session only)")
 
     if not st.session_state["history"]:
-        st.info("ما فيه بيانات بعد.")
-    else:
-        hdf = pd.DataFrame(st.session_state["history"])
+        st.info("No activity yet. Solve some questions or syntax items first.")
+        return
 
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Total attempts", len(hdf))
-        with col2:
-            st.metric("Correct", int(hdf["correct"].sum()))
-        with col3:
-            acc = hdf["correct"].mean()
-            st.metric("Accuracy", f"{acc*100:.1f}%")
+    hdf = pd.DataFrame(st.session_state["history"])
 
-        st.markdown("---")
-        st.markdown("**Attempts per mode:**")
-        mode_counts = hdf.groupby("mode")["mode"].count().reset_index(name="count")
-        st.dataframe(mode_counts, use_container_width=True)
+    agg = (
+        hdf.groupby("user")
+        .agg(
+            total_events=("mode", "count"),
+            correct=("correct", "sum"),
+            score=("delta", "sum"),
+        )
+        .reset_index()
+    )
+    agg["accuracy"] = (agg["correct"] / agg["total_events"]).round(2)
 
-        st.markdown("**Attempts per language:**")
-        lang_counts = hdf.groupby("language")["language"].count().reset_index(name="count")
-        st.dataframe(lang_counts, use_container_width=True)
-
-        st.markdown("**Attempts per level:**")
-        lvl_counts = hdf.groupby("level")["level"].count().reset_index(name="count")
-        st.dataframe(lvl_counts, use_container_width=True)
-
-# --------------------------------------
-# TAB 6: Profile
-# --------------------------------------
-with tab6:
-    st.markdown("#### 👤 Profile & Levels")
-
-    st.markdown(f"**Username:** `{st.session_state['username']}`")
-    st.write("")
-    st.markdown("**Your current session stats:**")
-    st.write(f"- Syntax Practice: {st.session_state['syntax_score']} / {st.session_state['syntax_attempts']}")
-    st.write(f"- Questions Lab: {st.session_state['q_score']} / {st.session_state['q_attempts']}")
-
-    total_correct = st.session_state["syntax_score"] + st.session_state["q_score"]
-    if total_correct < 10:
-        lvl = "Beginner"
-    elif total_correct < 30:
-        lvl = "Intermediate"
-    else:
-        lvl = "Advanced"
-
-    st.write("")
-    st.markdown(f"### 🏅 Your Level: **{lvl}**")
-
-    st.markdown(
-        """
-        - **Beginner:** أقل من 10 إجابات صحيحة.
-        - **Intermediate:** بين 10 و 29 إجابة صحيحة.
-        - **Advanced:** 30 فأكثر في نفس الجلسة.
-        """
+    st.markdown("**User ranking (local session):**")
+    st.dataframe(
+        agg.sort_values(["score", "accuracy"], ascending=[False, False]),
+        use_container_width=True,
     )
 
+    st.markdown("---")
+    st.markdown("**Raw history:**")
+    st.dataframe(hdf, use_container_width=True)
+
+# ======================================
+# 15) Settings section
+# ======================================
+def render_settings():
+    st.markdown("#### ⚙️ Settings")
+
+    st.markdown(f"**Current username:** `{st.session_state['username']}`")
+    st.markdown(f"**Preferred language:** `{preferred_lang}`")
+
+    st.write("")
+    st.markdown("**AI Coach status:**")
+    if ai_enabled:
+        st.success("AI Coach is active and ready.")
+    else:
+        st.warning("AI Coach is not active (OpenAI API key is missing or invalid).")
+
+    st.write("")
+    if st.button("Reset all session progress", key="settings_reset_all_btn"):
+        st.session_state["syntax_score"] = 0
+        st.session_state["syntax_attempts"] = 0
+        st.session_state["q_score"] = 0
+        st.session_state["q_attempts"] = 0
+        st.session_state["history"] = []
+        st.experimental_rerun()
+
     st.info(
-        "حاليًا الـ Profile و Leaderboard مبنية على جلسة المتصفح فقط. "
-        "لو حاب نخليها محفوظة في Google Sheets لكل المستخدمين، نحتاج نرجع نضيف خدمة كتابة (gspread + service account)."
+        "This leaderboard and progress are session-based only. "
+        "If you want persistent global leaderboard using Google Sheets, "
+        "we can later add write-access with a service account."
     )
 
 # ======================================
-# Footer 3D
+# 16) Router (Home + sections)
+# ======================================
+section = st.session_state["section"]
+
+if section == "home":
+    render_home()
+elif section == "practice":
+    render_practice()
+elif section == "qlab":
+    render_qlab()
+elif section == "docs":
+    render_docs()
+elif section == "leaderboard":
+    render_leaderboard()
+elif section == "settings":
+    render_settings()
+else:
+    render_home()
+
+# ======================================
+# 17) Footer
 # ======================================
 st.write("")
 st.markdown(
     """
-    <div style="text-align:center; padding:1.3rem 0;">
+    <div style="text-align:center; padding:1.3rem 0 0.6rem 0;">
         <div class="footer-3d">
-            MADE BY ABDULRHMAN · NEON SYNTAX LAB
+            MADE BY ABDULRHMAN · WHITE & MINT LAB
         </div>
-        <div style="font-size:11px; color:rgba(148,163,184,0.85); margin-top:0.3rem;">
+        <div style="font-size:11px; color:#6b7280; margin-top:0.25rem;">
             Session-based only · No data is written back to Google Sheets yet.
         </div>
     </div>
